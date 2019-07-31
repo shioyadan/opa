@@ -80,6 +80,9 @@ architecture rtl of opa_sim_tb is
   signal p_sel    : std_logic_vector(c_config.reg_width/8-1 downto 0);
   signal p_data_o : std_logic_vector(c_config.reg_width  -1 downto 0);
   signal p_data_i : std_logic_vector(c_config.reg_width  -1 downto 0);
+
+  signal c_body : std_logic_vector(c_config.reg_width  -1 downto 0);
+
   
   shared variable ram : t_word_array(c_demo_ram'range) := c_demo_ram;
   
@@ -240,25 +243,36 @@ begin
           end if;
         end if;
         if (not p_stall and not p_we) = '1' then
-          if not good and endfile(input) then
-            p_data_i <= (others => '0');
-          else
-            if not good then
-              readline(input, bufi);
-            end if;
-            read(bufi, chi, good);
-            if not good then
-              chi := character'val(10);
-            end if;
-            p_data_i(31 downto 9) <= (others => '0');
-            p_data_i(8) <= '1';
-            p_data_i(7 downto 0) <= std_logic_vector(to_unsigned(character'pos(chi), 8));
-          end if;
+          -- if not good and endfile(input) then
+          --   p_data_i <= (others => '0');
+          -- else
+          --   if not good then
+          --     readline(input, bufi);
+          --   end if;
+          --   read(bufi, chi, good);
+          --   if not good then
+          --     chi := character'val(10);
+          --   end if;
+          --   p_data_i(31 downto 9) <= (others => '0');
+          --   p_data_i(8) <= '1';
+          --   p_data_i(7 downto 0) <= std_logic_vector(to_unsigned(character'pos(chi), 8));
+          -- end if;
+          p_data_i <= c_body;
         end if;
       end if;
       p_ack <= p_cyc and p_stb and not p_stall;
     end if;
   end process;
+
+  cycle_counter : process(clk, rstn)
+  begin
+    if rstn = '0' then
+      c_body <= "00000000000000000000000000000000";
+    elsif rising_edge(clk) then
+      c_body <= std_logic_vector(unsigned(c_body) + 1);
+    end if;
+  end process;
+
   
   lsfr : opa_lfsr
     generic map(g_bits => 3)
